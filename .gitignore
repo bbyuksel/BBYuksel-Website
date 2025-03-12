@@ -1,0 +1,18 @@
+# Configuration files
+includes/config.php
+
+# Uploaded files
+uploads/*
+!uploads/.gitkeep
+
+# Cache files
+*.cache
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
