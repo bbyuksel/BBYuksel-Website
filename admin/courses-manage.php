@@ -29,19 +29,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
     $description = clean_input($_POST['description']);
     $semester = clean_input($_POST['semester']);
     $year = clean_input($_POST['year']);
-    $link = clean_input($_POST['link']);
+    $level = clean_input($_POST['level']);
+    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    
+    // Handle syllabus file upload
+    $syllabus_file = '';
+    if (!empty($_FILES['syllabus_file']['name'])) {
+        $target_dir = "../uploads/syllabus/";
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+        
+        $file_extension = strtolower(pathinfo($_FILES["syllabus_file"]["name"], PATHINFO_EXTENSION));
+        $syllabus_file = uniqid() . '.' . $file_extension;
+        $target_file = $target_dir . $syllabus_file;
+        
+        if (move_uploaded_file($_FILES["syllabus_file"]["tmp_name"], $target_file)) {
+            // File uploaded successfully
+        } else {
+            $error = 'Failed to upload syllabus file.';
+        }
+    }
     
     if (empty($code) || empty($title)) {
         $error = 'Please fill in all required fields.';
     } else {
         if (isset($_POST['id'])) {
             // Update existing course
-            $stmt = $pdo->prepare("UPDATE courses SET code = ?, title = ?, description = ?, semester = ?, year = ?, link = ? WHERE id = ?");
-            $result = $stmt->execute([$code, $title, $description, $semester, $year, $link, $_POST['id']]);
+            $sql = "UPDATE courses SET code = ?, title = ?, description = ?, semester = ?, 
+                    year = ?, level = ?, is_active = ?";
+            $params = [$code, $title, $description, $semester, $year, $level, $is_active];
+            
+            if ($syllabus_file) {
+                $sql .= ", syllabus_file = ?";
+                $params[] = $syllabus_file;
+            }
+            
+            $sql .= " WHERE id = ?";
+            $params[] = $_POST['id'];
+            
+            $stmt = $pdo->prepare($sql);
+            $result = $stmt->execute($params);
         } else {
             // Add new course
-            $stmt = $pdo->prepare("INSERT INTO courses (code, title, description, semester, year, link) VALUES (?, ?, ?, ?, ?, ?)");
-            $result = $stmt->execute([$code, $title, $description, $semester, $year, $link]);
+            $stmt = $pdo->prepare("INSERT INTO courses (code, title, description, semester, year, 
+                                level, is_active, syllabus_file, date_added) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $result = $stmt->execute([$code, $title, $description, $semester, $year, 
+                                    $level, $is_active, $syllabus_file]);
         }
         
         if ($result) {
@@ -76,7 +111,7 @@ require_once 'includes/admin-header.php';
             Add New Course
         </div>
         <div class="card-body">
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Course Code *</label>
                     <input type="text" name="code" class="form-control" required>
@@ -107,8 +142,24 @@ require_once 'includes/admin-header.php';
                 </div>
                 
                 <div class="form-group">
-                    <label>Link</label>
-                    <input type="url" name="link" class="form-control">
+                    <label>Level</label>
+                    <select name="level" class="form-control">
+                        <option value="Undergraduate">Undergraduate</option>
+                        <option value="Graduate">Graduate</option>
+                        <option value="PhD">PhD</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="isActive" name="is_active" checked>
+                        <label class="custom-control-label" for="isActive">Active Course</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Syllabus File</label>
+                    <input type="file" name="syllabus_file" class="form-control-file" accept=".pdf,.doc,.docx">
                 </div>
                 
                 <button type="submit" name="save" class="btn btn-primary">Add Course</button>
@@ -130,7 +181,10 @@ require_once 'includes/admin-header.php';
                             <th>Title</th>
                             <th>Semester</th>
                             <th>Year</th>
-                            <th>Link</th>
+                            <th>Level</th>
+                            <th>Status</th>
+                            <th>Syllabus</th>
+                            <th>Added Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -141,11 +195,14 @@ require_once 'includes/admin-header.php';
                                 <td><?php echo htmlspecialchars($course['title']); ?></td>
                                 <td><?php echo htmlspecialchars($course['semester']); ?></td>
                                 <td><?php echo htmlspecialchars($course['year']); ?></td>
+                                <td><?php echo htmlspecialchars($course['level']); ?></td>
+                                <td><?php echo $course['is_active'] ? 'Active' : 'Inactive'; ?></td>
                                 <td>
-                                    <?php if ($course['link']): ?>
-                                        <a href="<?php echo htmlspecialchars($course['link']); ?>" target="_blank">View</a>
+                                    <?php if ($course['syllabus_file']): ?>
+                                        <a href="../uploads/syllabus/<?php echo htmlspecialchars($course['syllabus_file']); ?>" target="_blank">View</a>
                                     <?php endif; ?>
                                 </td>
+                                <td><?php echo date('Y-m-d', strtotime($course['date_added'])); ?></td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-primary edit-course" 
                                             data-id="<?php echo $course['id']; ?>"
@@ -154,7 +211,8 @@ require_once 'includes/admin-header.php';
                                             data-description="<?php echo htmlspecialchars($course['description']); ?>"
                                             data-semester="<?php echo htmlspecialchars($course['semester']); ?>"
                                             data-year="<?php echo htmlspecialchars($course['year']); ?>"
-                                            data-link="<?php echo htmlspecialchars($course['link']); ?>">
+                                            data-level="<?php echo htmlspecialchars($course['level']); ?>"
+                                            data-is-active="<?php echo $course['is_active']; ?>">
                                         Edit
                                     </button>
                                     <form method="post" class="d-inline" onsubmit="return confirm('Are you sure?');">
@@ -214,8 +272,19 @@ require_once 'includes/admin-header.php';
                     </div>
                     
                     <div class="form-group">
-                        <label>Link</label>
-                        <input type="url" name="link" id="edit_link" class="form-control">
+                        <label>Level</label>
+                        <select name="level" id="edit_level" class="form-control">
+                            <option value="Undergraduate">Undergraduate</option>
+                            <option value="Graduate">Graduate</option>
+                            <option value="PhD">PhD</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="edit_is_active" name="is_active">
+                            <label class="custom-control-label" for="edit_is_active">Active Course</label>
+                        </div>
                     </div>
                     
                     <button type="submit" name="save" class="btn btn-primary">Update Course</button>
@@ -236,7 +305,8 @@ $(document).ready(function() {
         var description = $(this).data('description');
         var semester = $(this).data('semester');
         var year = $(this).data('year');
-        var link = $(this).data('link');
+        var level = $(this).data('level');
+        var is_active = $(this).data('is-active');
         
         $('#edit_id').val(id);
         $('#edit_code').val(code);
@@ -244,7 +314,8 @@ $(document).ready(function() {
         $('#edit_description').val(description);
         $('#edit_semester').val(semester);
         $('#edit_year').val(year);
-        $('#edit_link').val(link);
+        $('#edit_level').val(level);
+        $('#edit_is_active').prop('checked', is_active === '1');
         
         $('#editModal').modal('show');
     });

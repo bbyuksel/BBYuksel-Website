@@ -24,6 +24,27 @@ require_once 'includes/admin-header.php';
 
 <div class="container mt-4">
     <h1>Dashboard</h1>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span>Website Preview</span>
+                        <button class="btn btn-sm btn-secondary ml-2" id="togglePreview">
+                            <i class="fas fa-eye-slash"></i> Hide Preview
+                        </button>
+                    </div>
+                    <a href="../index.php" target="_blank" class="btn btn-sm btn-primary">Open in New Tab</a>
+                </div>
+                <div class="card-body p-0" id="previewContainer">
+                    <div class="website-preview">
+                        <iframe src="../index.php" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Overview Cards -->
     <div class="row mb-4">
@@ -191,6 +212,54 @@ require_once 'includes/admin-header.php';
     z-index: 1;
     content: "";
 }
+.website-preview {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    overflow: hidden;
+    background: #fff;
+    transition: height 0.3s ease;
+}
+
+.website-preview.collapsed {
+    height: 0;
+}
+
+.website-preview iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('togglePreview');
+    const previewContainer = document.getElementById('previewContainer');
+    const preview = previewContainer.querySelector('.website-preview');
+    const icon = toggleBtn.querySelector('i');
+    
+    // Check if there's a saved preference
+    const isPreviewHidden = localStorage.getItem('dashboardPreviewHidden') === 'true';
+    
+    // Apply initial state
+    if (isPreviewHidden) {
+        preview.classList.add('collapsed');
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Show Preview';
+    }
+
+    toggleBtn.addEventListener('click', function() {
+        preview.classList.toggle('collapsed');
+        
+        if (preview.classList.contains('collapsed')) {
+            toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Show Preview';
+            localStorage.setItem('dashboardPreviewHidden', 'true');
+        } else {
+            toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Preview';
+            localStorage.setItem('dashboardPreviewHidden', 'false');
+        }
+    });
+});
+</script>
 
 <?php require_once 'includes/admin-footer.php'; ?> 

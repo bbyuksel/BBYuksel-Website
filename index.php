@@ -26,15 +26,15 @@ $profileData = $stmt->fetch(PDO::FETCH_ASSOC);
                 <!-- Profil resmi -->
                 <div class="profile-image mb-4">
                     <?php if (!empty($profileData['profile_image'])): ?>
-                        <img src="uploads/<?php echo htmlspecialchars($profileData['profile_image']); ?>" 
+                        <img src="uploads/profile/<?php echo htmlspecialchars($profileData['profile_image']); ?>" 
                              alt="Profile Image" 
                              class="img-fluid rounded shadow"
-                             style="max-width: 200px; height: auto;">
+                             style="max-width: 300px; height: auto;">
                     <?php else: ?>
                         <img src="images/default-avatar.png" 
                              alt="Default Profile Image" 
                              class="img-fluid rounded shadow"
-                             style="max-width: 200px; height: auto;">
+                             style="max-width: 300px; height: auto;">
                     <?php endif; ?>
                 </div>
             </div>
@@ -79,6 +79,36 @@ $profileData = $stmt->fetch(PDO::FETCH_ASSOC);
     </div>
 
     <?php require_once 'includes/footer.php'; ?>
+
+    <!-- Admin Giriş Butonu -->
+    <a href="admin/index.php" class="admin-btn">A</a>
+
+    <style>
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: #343a40;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .admin-btn:hover {
+            background-color: #23272b;
+            color: white;
+            text-decoration: none;
+            transform: scale(1.1);
+        }
+    </style>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
