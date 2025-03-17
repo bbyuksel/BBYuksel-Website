@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Academic Website with Admin Panel
 
 ## Directory Structure
@@ -98,3 +99,6 @@ For issues and questions, please create an issue in the repository.
 ## License
 
 This project is licensed under the MIT License.
+=======
+# BBYuksel-Website
+>>>>>>> 36b8b4b346936f653d46ccc057f5aab1726c4752
